@@ -1,0 +1,1 @@
+App that collects ideas of different people from different fields and place it to single place to share ideas of differebt people about different fields.
