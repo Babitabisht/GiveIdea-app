@@ -2,11 +2,18 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-
+const path = require('path');
 const methodOverride = require('method-override');
 const flash = require('connect-flash');
 const session = require('express-session');
 const app = express();
+
+
+//load routes
+const ideas = require('./routes/ideas');
+const users = require('./routes/users');
+
+
 
 //Map global Promise - get rid of warning
 mongoose.Promise = global.Promise;
@@ -30,6 +37,8 @@ app.set('view engine', 'handlebars');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
 
+//static folder
+app.use(express.static(path.join(__dirname,'public')));
 
 //Override middleware
 app.use(methodOverride('_method'));
@@ -75,113 +84,13 @@ app.get('/about', (req, res) => {
 })
 
 
-//Ideas index page
-app.get('/ideas', (req, res) => {
-
-    Idea.find({})
-        .sort({ date: 'desc' })
-        .then(ideas => {
-            console.log(ideas)
-            res.render('ideas/index', {
-                ideas: ideas,
-
-            })
 
 
+//use routes
 
+app.use('/ideas',ideas);
+app.use('/users',users);
 
-        })
-
-
-})
-
-//Add Idea Form
-
-app.get('/ideas/add', (req, res) => {
-    res.render('ideas/add');
-
-})
-
-
-//Edit Idea Form
-
-app.get('/ideas/edit/:id', (req, res) => {
-    Idea.findOne({
-        _id: req.params.id,
-    })
-        .then(idea => {
-            res.render('ideas/edit', {
-                idea: idea
-            });
-
-        })
-
-})
-
-//Edit Form Process
-app.put('/ideas/:id', (req, res) => {
-
-    Idea.findOne({
-        _id: req.params.id
-    }).then(idea => {
-        idea.title = req.body.title;
-        idea.details = req.body.details;
-        idea.save()
-            .then(idea => {
-                req.flash('success_msg', 'Your idea Updated');
-                res.redirect('/ideas');
-            })
-    })
-})
-
-// add idea Form 
-app.post('/ideas', (req, res) => {
-
-    let errors = [];
-    if (!req.body.title) {
-        errors.push({ text: "Please Enter a title" });
-    }
-    if (!req.body.details) {
-        errors.push({ text: "Please Enter valid details" });
-
-    }
-
-    if (errors.length > 0) {
-        res.render('ideas/add', {
-            errors: errors,
-            title: req.body.title,
-            details: req.body.details
-
-        });
-    } else {
-
-        const newUser = {
-            title: req.body.title,
-            details: req.body.details
-        }
-        new Idea(newUser).save()
-            .then(idea => {
-                req.flash('success_msg', 'Your idea added')
-                res.redirect('/ideas');
-            })
-
-    }
-
-})
-
-//delete idea
-
-app.delete('/ideas/:id', (req, res) => {
-
-
-    Idea.remove({ _id: req.params.id })
-        .then(() => {
-
-            req.flash('success_msg', 'Your idea Removed');
-            console.log('hello');
-            res.redirect('/ideas');
-        });
-})
 
 const port = 5000;
 app.listen(port, () => {
